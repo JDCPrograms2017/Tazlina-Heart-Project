@@ -4,6 +4,7 @@
 int touchPin = T0; //GPIO4 A.K.A Touch Pin 0 on ESP32 WROOM
 int val = 0;
 int threshold = 75;
+int counter = 0;
 
 //Stuff for FastLED
 #define NUM_LEDS 60
@@ -37,25 +38,29 @@ void loop() {
       Serial.println();
       delay(1000);
 
-      //FastLED Stuff
-      for(int i = 0; i < NUM_LEDS; i++) { //Fades the LEDs into bright red
-        leds[i] = CRGB::Red;
-        FastLED.show();
-        delay(50);
+      if (counter == 0) { //Counter acts as an on/off switch for the heart. It should only ever have a value of 0 or 1
+
+        counter++;
+        //FastLED Stuff - Turns on heart with a simple animation
+        for(int i = 0; i < NUM_LEDS; i++) { //Fades the LEDs into bright red
+          leds[i] = CRGB::Red;
+          FastLED.show();
+          delay(50);
+        }
+        delay(1000);
       }
-      delay(1000);
 
-      
+      else {
 
-      for(int i = 0; i < NUM_LEDS; i++) { //Fades the LEDs out to off
-        leds[i] = CRGB::Black;
-        FastLED.show();
-        delay(50);
+        counter = 0;
+        for(int i = 0; i < NUM_LEDS; i++) { //Fades the LEDs out to off
+          leds[i] = CRGB::Black;
+          FastLED.show();
+          delay(50);
+        }
       }
 
       FastLED.show();
     }
   }
-
-  //THIS IS WHERE THE STARTUP ANIMATION WILL GO (using FastLED)
 }
