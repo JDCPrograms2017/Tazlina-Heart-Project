@@ -1,4 +1,5 @@
 #include <FastLED.h>
+#include <WiFi.h>
 
 //Stuff for TTP223 Touch Sensor
 int touchPin = T0; //GPIO4 A.K.A Touch Pin 0 on ESP32 WROOM
@@ -13,11 +14,34 @@ int counter = 0;
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
+//WiFi Stuff
+char ssid[] = "randomSSID";
+char password[] = "password";
+
 void setup() {
   Serial.begin(9600);
   pinMode(touchPin, INPUT);
 
   delay(1000);
+
+  //WiFi Stuff
+  Serial.print("Connecting to...");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password); //Begins to attempt connecting to specified WiFi network
+
+  while (WiFi.status() != WL_CONNECTED) { //Waits until connection is successfully established
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected.");
+  Serial.println("IP Address: ");
+  Serial.println(WiFi.localIP()); //Displays local IP of ESP32
+
+  server.begin();
+  
   //FastLED Stuff
 
   FastLED.addLeds<LED_TYPE, DATAPIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip); //Establishing our LED Strip
