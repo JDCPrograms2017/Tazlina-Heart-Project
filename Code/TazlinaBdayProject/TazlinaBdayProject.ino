@@ -15,9 +15,17 @@ int counter = 0;
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
+//----------
 //WiFi Stuff - TODO: Add feature to connect locally to ESP32 (via Bluetooth or something) if WiFi networks are unavailable
-char ssid[] = "ChadwickWiFi";
-char password[] = "39877925";
+//----------
+//Info for ESP32 Soft Access Point
+char ESP32SSID[] = "TazlinaWiFiLamp";
+char ESP32Password[] = "dancewithme";
+
+char *ssid = NULL;
+char *password = NULL;
+
+WiFiServer server(80); //Establishing a web server on port 80
 
 void setup() {
   Serial.begin(9600);
@@ -26,22 +34,28 @@ void setup() {
   delay(1000);
 
   //WiFi Stuff
-  Serial.print("Connecting to...");
-  Serial.println(ssid);
+  if (ssid == NULL || password == NULL) {
+    Serial.println("Insufficient credentials... could not attempt to connect. Missing SSID or password.");
+    Serial.println("RETURNING TO SOFT ACCESS POINT MODE!");
+  } else {
+    Serial.print("Connecting to...");
+    Serial.println(ssid);
 
-  WiFi.begin(ssid, password); //Begins to attempt connecting to specified WiFi network
+    WiFi.begin(ssid, password); //Begins to attempt connecting to specified WiFi network
 
-  while (WiFi.status() != WL_CONNECTED) { //Waits until connection is successfully established
-    delay(500);
-    Serial.print(".");
+    while (WiFi.status() != WL_CONNECTED) { //Waits until connection is successfully established
+      delay(500);
+      Serial.print(".");
+    }
+
+    Serial.println("");
+    Serial.println("WiFi connected.");
+    Serial.println("Local IP Address: ");
+
+    Serial.println(WiFi.localIP()); //Displays local IP of ESP32.
+
+    server.begin();
   }
-
-  Serial.println("");
-  Serial.println("WiFi connected.");
-  Serial.println("IP Address: ");
-  Serial.println(WiFi.localIP()); //Displays local IP of ESP32
-
-  server.begin();
   
   //FastLED Stuff
   FastLED.addLeds<LED_TYPE, DATAPIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip); //Establishing our LED Strip
@@ -122,4 +136,30 @@ void loop() {
       FastLED.show();
     }
   }
+}
+
+void SoftAPSetup() {
+  Serial.println("\n\nSetting up Soft Access Point...");
+  WiFi.softAP(ESP32SSID, ESP32Password);
+
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("Access Point IP address: ");
+  Serial.println(IP);
+
+  server.begin();
+
+  // The point of the SoftAP is to establish a local connection to the ESP32, get WiFi credentials from the user, restart the ESP32, and then connect to the global WiFi network.
+  while (ssid == NULL && password == NULL) {
+    WiFiClient client = server.available(); // Listens on the port specified earlier and awaits incoming clients
+
+    if(client) {
+      Serial.println("New client connected!");
+      while (client.connected()) {
+        if (client.available()) { // If there are bytes to read from the client...
+          // EXTRACT HTTP REQUEST DATA
+        }
+      }
+    }
+  }
+
 }
