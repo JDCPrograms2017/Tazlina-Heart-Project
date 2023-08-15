@@ -2,6 +2,7 @@
 
 #include <FastLED.h>
 #include <fstream>
+#include <cstring>
 /**
 * Developer: Joshua Chadwick
 * Description: This class will be used to handle encoded HTTP requests from the Android APP and adjust the LEDs in the lamp
