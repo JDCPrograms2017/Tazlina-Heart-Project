@@ -1,5 +1,6 @@
 #include <FastLED.h>
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include "LEDManager.h"
 
 //Stuff for TTP223 Touch Sensor
@@ -18,44 +19,24 @@ CRGB leds[NUM_LEDS];
 //----------
 //WiFi Stuff - TODO: Add feature to connect locally to ESP32 (via Bluetooth or something) if WiFi networks are unavailable
 //----------
-//Info for ESP32 Soft Access Point
-char ESP32SSID[] = "TazlinaWiFiLamp";
-char ESP32Password[] = "dancewithme";
 
-char *ssid = NULL;
-char *password = NULL;
-
-WiFiServer server(80); //Establishing a web server on port 80
 
 void setup() {
+  WiFiManager wm; // The use of WiFiManager simplifies the process of connecting our ESP32 to a WiFi network.
+  
+  wm.resetSettings(); //Removes all stored WiFi credentials every time the ESP32 is turned on. Might want to remove and later replace with 
+                      //an On-Demand switch in the APP when we want to connect to a new WiFi network.
+
+  bool res;
+  res = wm.autoConnect("TazlinaHeartLamp", "dancewithme");
+  if (!res) {
+    Serial.println("Failed to connect");
+  }
+  
   Serial.begin(9600);
   pinMode(touchPin, INPUT);
 
   delay(1000);
-
-  //WiFi Stuff
-  if (ssid == NULL || password == NULL) {
-    Serial.println("Insufficient credentials... could not attempt to connect. Missing SSID or password.");
-    Serial.println("RETURNING TO SOFT ACCESS POINT MODE!");
-  } else {
-    Serial.print("Connecting to...");
-    Serial.println(ssid);
-
-    WiFi.begin(ssid, password); //Begins to attempt connecting to specified WiFi network
-
-    while (WiFi.status() != WL_CONNECTED) { //Waits until connection is successfully established
-      delay(500);
-      Serial.print(".");
-    }
-
-    Serial.println("");
-    Serial.println("WiFi connected.");
-    Serial.println("Local IP Address: ");
-
-    Serial.println(WiFi.localIP()); //Displays local IP of ESP32.
-
-    server.begin();
-  }
   
   //FastLED Stuff
   FastLED.addLeds<LED_TYPE, DATAPIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip); //Establishing our LED Strip
@@ -138,6 +119,8 @@ void loop() {
   }
 }
 
+/** --Using WiFiManager instead--
+
 void SoftAPSetup() {
   Serial.println("\n\nSetting up Soft Access Point...");
   WiFi.softAP(ESP32SSID, ESP32Password);
@@ -161,5 +144,6 @@ void SoftAPSetup() {
       }
     }
   }
+  **/
 
 }
