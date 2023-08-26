@@ -26,7 +26,7 @@ class LEDManager {
       }
 
       ~LEDManager() {
-        delete leds[];
+        delete leds;
       }
 
       bool decodeHTTPMessage(String HTTP_REQUEST_CONTENT);

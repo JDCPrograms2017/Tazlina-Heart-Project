@@ -8,8 +8,7 @@
 
 #include <WiFiManager.h>
 #include "LEDManager.h"
-#include <BLEDevice.h>
-#include <BLEServer.h>
+#include "ESPServerCallbacks.h"
 
 //Stuff for TTP223 Touch Sensor
 int touchPin = T0; //GPIO4 A.K.A Touch Pin 0 on ESP32 WROOM
@@ -61,6 +60,7 @@ void setup() {
 }
 
 void loop() {
+  /*
   WiFiClient client = server.available(); //Listens for incoming clients
 
   if(client) { //Checks if we have established connection to a client.
@@ -77,7 +77,7 @@ void loop() {
       PROGRAM IN SPECIAL ANIMATION LATER
 
       Current animation mimics the same animation as when activated by the physical user.
-      */
+      
       for(int i = 0; i < NUM_LEDS; i++) { //Fades the LEDs into bright red
         leds[i] = CRGB::Red;
         FastLED.show();
@@ -91,7 +91,7 @@ void loop() {
         delay(50);
       }
     }
-  }
+    */
 
   /*
   THIS SECTION IS FOR NON-WiFi RELATED FUNCTIONS
@@ -138,10 +138,12 @@ void loop() {
 void initBLEConnection() {
   BLEDevice::init("TazIoTLamp");
   pServer = BLEDevice::createServer();
-  pCharac = pServer->createCharacteristic(BLEUUID("PublicIPAddress"), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+  pCharac = pServer->createService(BLEUUID("PublicIPAddress"), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
 
-  pCharac->setValue(WiFi.localIP()); // This characteristic in our BLE broadcast will contain the IP address of the ESP32, which can then be read by the mobile device.
+  pCharac->setValue(WiFi.localIP().toString()); // This characteristic in our BLE broadcast will contain the IP address of the ESP32, which can then be read by the mobile device.
   pServer->startAdvertising();
+
+  pServer->setCallbacks(new ESPServerCallbacks());
 }
 
 /** --Using WiFiManager instead--
