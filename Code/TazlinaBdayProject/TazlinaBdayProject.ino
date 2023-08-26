@@ -1,7 +1,15 @@
 #include <FastLED.h>
+
+#if defined(ESP32)
 #include <WiFi.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#endif
+
 #include <WiFiManager.h>
 #include "LEDManager.h"
+#include <BLEDevice.h>
+#include <BLEServer.h>
 
 //Stuff for TTP223 Touch Sensor
 int touchPin = T0; //GPIO4 A.K.A Touch Pin 0 on ESP32 WROOM
@@ -16,25 +24,32 @@ int counter = 0;
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
+//BLE Connection Stuff
+BLEServer* pServer = NULL;
+BLECharacteristic* pCharac = NULL;
+
 //----------
 //WiFi Stuff - TODO: Add feature to connect locally to ESP32 (via Bluetooth or something) if WiFi networks are unavailable
 //----------
 
 
 void setup() {
+  
+  Serial.begin(9600);
+  pinMode(touchPin, INPUT);
+  
   WiFiManager wm; // The use of WiFiManager simplifies the process of connecting our ESP32 to a WiFi network.
   
   wm.resetSettings(); //Removes all stored WiFi credentials every time the ESP32 is turned on. Might want to remove and later replace with 
                       //an On-Demand switch in the APP when we want to connect to a new WiFi network.
 
   bool res;
-  res = wm.autoConnect("TazlinaHeartLamp", "dancewithme");
+  res = wm.autoConnect("TazlinaHeartLamp", "dancewithme"); // Initiates a process to turn the ESP32 into an Access Point, feed an HTML page to the user to setup a WiFi network, and then restarts the ESP32 in server mode
   if (!res) {
     Serial.println("Failed to connect");
+  } else { // Now that we are connected to the open Internet, we will connect the ESP32 to a local mobile device via Bluetooth to broadcast the IP address to the Android App.
+    initBLEConnection();
   }
-  
-  Serial.begin(9600);
-  pinMode(touchPin, INPUT);
 
   delay(1000);
   
@@ -42,6 +57,7 @@ void setup() {
   FastLED.addLeds<LED_TYPE, DATAPIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip); //Establishing our LED Strip
 
   FastLED.setBrightness(50); //Set our initial brightness
+
 }
 
 void loop() {
@@ -117,6 +133,15 @@ void loop() {
       FastLED.show();
     }
   }
+}
+
+void initBLEConnection() {
+  BLEDevice::init("TazIoTLamp");
+  pServer = BLEDevice::createServer();
+  pCharac = pServer->createCharacteristic(BLEUUID("PublicIPAddress"), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+
+  pCharac->setValue(WiFi.localIP()); // This characteristic in our BLE broadcast will contain the IP address of the ESP32, which can then be read by the mobile device.
+  pServer->startAdvertising();
 }
 
 /** --Using WiFiManager instead--
