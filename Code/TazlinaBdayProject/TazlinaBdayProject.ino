@@ -8,7 +8,6 @@
 
 #include <WiFiManager.h>
 #include "LEDManager.h"
-#include "ESPServerCallbacks.h"
 
 //Stuff for TTP223 Touch Sensor
 int touchPin = T0; //GPIO4 A.K.A Touch Pin 0 on ESP32 WROOM
@@ -22,10 +21,6 @@ int counter = 0;
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
-
-//BLE Connection Stuff
-BLEServer* pServer = NULL;
-BLECharacteristic* pCharac = NULL;
 
 //----------
 //WiFi Stuff - TODO: Add feature to connect locally to ESP32 (via Bluetooth or something) if WiFi networks are unavailable
@@ -47,7 +42,8 @@ void setup() {
   if (!res) {
     Serial.println("Failed to connect");
   } else { // Now that we are connected to the open Internet, we will connect the ESP32 to a local mobile device via Bluetooth to broadcast the IP address to the Android App.
-    initBLEConnection();
+    //initBLEConnection();
+    Serial.println("Connect to BLE next");
   }
 
   delay(1000);
@@ -60,39 +56,9 @@ void setup() {
 }
 
 void loop() {
-  /*
-  WiFiClient client = server.available(); //Listens for incoming clients
 
-  if(client) { //Checks if we have established connection to a client.
-    String request = client.readStringUntil('\r');
-    client.flush(); //Flushing the remaining information from the HTTP request
 
-    if(request.indexOf("/send-love") != -1) { //If the HTTP GET ends with /send-love, this will return true
-
-      //Send HTTP response before playing animation on server-side
-      client.println("HTTP/1.1 200 OK"); //Sending an HTTP response to the APP
-      client.println("Content-type:text/html"); //Specifying the information coming back to the client
-      client.println(); //End response with blank line
-      /*
-      PROGRAM IN SPECIAL ANIMATION LATER
-
-      Current animation mimics the same animation as when activated by the physical user.
-      
-      for(int i = 0; i < NUM_LEDS; i++) { //Fades the LEDs into bright red
-        leds[i] = CRGB::Red;
-        FastLED.show();
-        delay(50);
-       }
-      delay(1000);
-
-      for(int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = CRGB::Black;
-        FastLED.show();
-        delay(50);
-      }
-    }
-    */
-
+  
   /*
   THIS SECTION IS FOR NON-WiFi RELATED FUNCTIONS
   ----------------------------------------------
@@ -133,44 +99,4 @@ void loop() {
       FastLED.show();
     }
   }
-}
-
-void initBLEConnection() {
-  BLEDevice::init("TazIoTLamp");
-  pServer = BLEDevice::createServer();
-  pCharac = pServer->createService(BLEUUID("PublicIPAddress"), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-
-  pCharac->setValue(WiFi.localIP().toString()); // This characteristic in our BLE broadcast will contain the IP address of the ESP32, which can then be read by the mobile device.
-  pServer->startAdvertising();
-
-  pServer->setCallbacks(new ESPServerCallbacks());
-}
-
-/** --Using WiFiManager instead--
-
-void SoftAPSetup() {
-  Serial.println("\n\nSetting up Soft Access Point...");
-  WiFi.softAP(ESP32SSID, ESP32Password);
-
-  IPAddress IP = WiFi.softAPIP();
-  Serial.print("Access Point IP address: ");
-  Serial.println(IP);
-
-  server.begin();
-
-  // The point of the SoftAP is to establish a local connection to the ESP32, get WiFi credentials from the user, restart the ESP32, and then connect to the global WiFi network.
-  while (ssid == NULL && password == NULL) {
-    WiFiClient client = server.available(); // Listens on the port specified earlier and awaits incoming clients
-
-    if(client) {
-      Serial.println("New client connected!");
-      while (client.connected()) {
-        if (client.available()) { // If there are bytes to read from the client...
-          // EXTRACT HTTP REQUEST DATA
-        }
-      }
-    }
-  }
-  **/
-
 }
